@@ -1,21 +1,22 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../core/utils/task_storage.dart';
 import 'task_event.dart';
 import 'task_state.dart';
 import '../../models/task_response.dart';
 
 class TaskBloc extends Bloc<TaskEvent, TaskState> {
-  TaskBloc() : super(const TaskState()) {
+  TaskBloc() : super( TaskState(tasks:  [])) {
 
-    on<LoadTasks>((event, emit) {
-      emit(TaskState(tasks: [
-        // TaskResponse(taskTitle: "delectus aut autem", taskID: "User 1", status: false),
-        // TaskResponse(taskTitle: "fugiat veniam minus", taskID: "User 1", status: true),
-      ]));
+    on<LoadTasks>((event, emit) async {
+      final task = await TaskStorage.loadTasks();
+      emit(state.copyWith(tasks: task));
     });
 
-    on<AddTask>((event, emit) {
+    on<AddTask>((event, emit) async {
       final updatedTasks = List<TaskResponse>.from(state.tasks)..add(event.task);
       emit(state.copyWith(tasks: updatedTasks));
+      await TaskStorage.saveTasks(updatedTasks);
+
     });
 
     // on<ToggleTaskStatus>((event, emit) {
@@ -25,7 +26,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     // });
 
     on<DeleteTask>((event, emit){
-      final deleteTask = List<TaskResponse>.from(state.tasks)..removeAt(event.index);
+      final deleteTask = List<TaskResponse>.from(state.tasks)
+        ..removeAt(event.index);
       emit(state.copyWith(tasks: deleteTask));
     });
 
@@ -48,6 +50,26 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       emit(state.copyWith(tasks: updatedTasks));
     });
 
+  }
+
+  @override
+  TaskState? fromJson(Map<String, dynamic> json) {
+    try {
+      final tasksJson = json['tasks'] as List<dynamic>;
+      final tasks = tasksJson
+          .map((task) => TaskResponse.fromJson(task as Map<String, dynamic>))
+          .toList();
+      return TaskState(tasks: tasks);
+    } catch (_) {
+      return TaskState(tasks: []);
+    }
+  }
+
+  @override
+  Map<String, dynamic>? toJson(TaskState state) {
+    return {
+      'tasks': state.tasks.map((task) => task.toJson()).toList(),
+    };
   }
 }
 

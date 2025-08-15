@@ -1,9 +1,14 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:todo_bloc/blocs/task/task_bloc.dart';
 import 'package:todo_bloc/blocs/task/task_event.dart';
 import 'package:todo_bloc/blocs/task/task_state.dart';
 import 'package:todo_bloc/models/task_response.dart';
+
+import '../../blocs/login/login_bloc.dart';
+import '../../blocs/login/login_event.dart';
 
 
 class TaskScreen extends StatefulWidget {
@@ -20,6 +25,7 @@ class _TaskScreenState extends State<TaskScreen> {
   final subTitleController = TextEditingController();
   final userController = TextEditingController();
   DateTime? selectedDate;
+  final FirebaseAuth firebaseAuth = FirebaseAuth.instance;
 
   void _pickDate() async {
     final picked = await showDatePicker(
@@ -402,12 +408,20 @@ class _TaskScreenState extends State<TaskScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white10,
         elevation: 0,
         title: const Text(
           'Your Tasks',
           style: TextStyle(color: Colors.white),
         ),
+        actions: [
+          IconButton(
+              onPressed: (){
+                context.read<LoginBloc>().add(LogoutRequested());
+                context.go('/login');
+              },
+              icon: Icon(Icons.settings, color: Colors.white,))
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -421,7 +435,8 @@ class _TaskScreenState extends State<TaskScreen> {
           builder: (context, state) {
             if (state.tasks.isEmpty) {
               return Center(child: Text("No task found...", style: TextStyle(color: Colors.amberAccent),));
-            } else {
+            }
+            else {
               return ListView.builder(
               padding: const EdgeInsets.all(12),
               itemCount: state.tasks.length,
@@ -442,3 +457,4 @@ class _TaskScreenState extends State<TaskScreen> {
     );
   }
 }
+
